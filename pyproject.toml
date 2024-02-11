@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "rbssim2"
+version = "0.1.0"
+description = "Backscattering simulation"
+authors = ["Timofey Bobrovskiy <timofeybobrovskiy@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+numpy = "^1.22"
+scipy = "^1.10"
+mendeleev = "0.12"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
