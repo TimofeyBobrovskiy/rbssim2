@@ -4,7 +4,7 @@ from typing import Dict, Callable
 from .Stopping import equation
 from .CrossSection import CrossSection
 from .Element import Element, Beam, Isotope
-from .Globals import STOPPING_FOLDER, SIGMACALC
+from .Globals import STOPPING_FOLDER
 
 
 class Layer:
@@ -25,9 +25,9 @@ class Layer:
             if element.symbol == symbol:
                 self.__components.pop(element)
 
-    def setCrossSection(self, beamIn: Beam, beamOut: Beam, theta: float):
+    def setCrossSection(self, beamIn: Beam, beamOut: Beam, theta: float, is_sigmacalc: bool):
 
-        if SIGMACALC:
+        if is_sigmacalc:
             func: Callable[[CrossSection], None] = lambda CrossSection: CrossSection.selectR33()
 
         else:
@@ -68,9 +68,9 @@ class Layer:
                 params = np.loadtxt(fname)
             else:
                 raise FileNotFoundError(f'File {fname} with stopping params for {element} not found')
-            stopping += equation(E, params) * self.__components[element]
+            stopping = stopping + equation(E, params) * self.__components[element]
 
         lnE = np.log(E)
         Mat = lnE[:, np.newaxis]**[0, 1, 2, 3, 4]
 
-        self.stoppingParams = np.linalg.lstsq(Mat, 1/stopping, rcond=-1)[0]
+        self.stoppingParams = np.linalg.lstsq(Mat, 1/stopping, rcond=None)[0]

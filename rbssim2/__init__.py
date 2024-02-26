@@ -13,7 +13,6 @@ from .utilsRBS import (vector_shift,
                        applyEnergyCalibration, 
                        find_extream, 
                        Rutherford,
-                       calc_chi2,
                        minimize_)
 
 from .Stopping import (EnergyAfterStopping, 
@@ -22,6 +21,7 @@ from .Stopping import (EnergyAfterStopping,
                        inverseDiff, 
                        inverseIntegral, 
                        inverseIntegrate)
+
 from .Globals import *
 from .Experiment import Measurement, Spectrum
 

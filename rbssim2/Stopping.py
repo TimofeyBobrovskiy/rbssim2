@@ -1,84 +1,42 @@
 import numpy as np
-
-np.seterr(all='ignore')
-
-
+try:
+    from .fortran import Stopping
+except ImportError:
+    from . import _Stopping as Stopping
 
 def inverse(E: np.ndarray, params: np.ndarray) -> np.ndarray:
-    lnE = np.log(E)
-    lnE2 = lnE * lnE
-    lnE3 = lnE2 * lnE
-    lnE4 = lnE3 * lnE
-    return (params[0] +
-            params[1] * lnE +
-            params[2] * lnE2 +
-            params[3] * lnE3 +
-            params[4] * lnE4)
-
+    
+    return Stopping.inverse(E, E.size, params, params.size)
 
 
 def equation(E: np.ndarray, params: np.ndarray) -> np.ndarray:
-    return 1/inverse(E, params)
 
+    return Stopping.equation(E, E.size, params, params.size)
 
 
 def inverseIntegral(E: np.ndarray, params: np.ndarray) -> np.ndarray:
 
-    lnE = np.log(E)
-    c1 = params[1] - 2.*params[2] + 6.*params[3] - 24.*params[4]
-    return E*((params[0] - c1) + params[4] * lnE * lnE * lnE * lnE +
-              (params[3] - 4.*params[4]) * lnE * lnE * lnE +
-              (params[2] - 3.*params[3] + 12.*params[4]) * lnE * lnE +
-              c1*lnE)
-
+    return Stopping.inverseintegral(E, E.size, params, params.size)
 
 
 def inverseIntegrate(E0: np.ndarray,
                      E1: np.ndarray,
                      params: np.ndarray) -> np.ndarray:
     """Inverse integral of stopping power calculates range of ion"""
-    return inverseIntegral(E0, params) - inverseIntegral(E1, params)
+    assert (E0.size == E1.size)
 
+    return Stopping.inverseintegrate(E0, E1, E0.size, params, params.size)
 
 
 def inverseDiff(E: np.ndarray, params: np.ndarray) -> np.ndarray:
 
-    lnE = np.log(E, dtype=np.float64)
-    lnE2 = lnE * lnE
-    lnE3 = lnE2 * lnE
-    return (params[1] +
-            2.*params[2]*lnE +
-            3.*params[3]*lnE2 +
-            4.*params[4]*lnE3)/E
-
+    return Stopping.inversediff(E, E.size, params, params.size)
 
 
 def EnergyAfterStopping(E0: np.ndarray,
                         X: np.ndarray,
                         params: np.ndarray,
-                        E_THRESHOLD) -> np.ndarray:
+                        E_THRESHOLD: float) -> np.ndarray:
+    assert (E0.size == X.size)
 
-    INT_from = inverseIntegral(E0, params)
-    Eend = np.zeros_like(E0)
-    isEnd = False
-    _Eend = 0.0
-
-    for i in range(0, E0.size):
-
-        _Eend = E0[i]
-        if isEnd:
-            break
-
-        for j in range(100):
-            if _Eend <= E_THRESHOLD:
-                Eend[i] = 0
-                isEnd = True
-                break
-
-            val = INT_from[i] - inverseIntegral(_Eend, params) - X[i]
-            if np.abs(val) <= 0.02:
-                Eend[i] = _Eend
-                break
-
-            _Eend = _Eend + val/inverse(_Eend, params)
-    return Eend
+    return Stopping.energyafterstopping(E0, X, E0.size, params, params.size, E_THRESHOLD)

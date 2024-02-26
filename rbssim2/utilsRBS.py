@@ -1,19 +1,16 @@
 import numpy as np
-import time
 from scipy.optimize import curve_fit
 from scipy.signal import savgol_filter
-from functools import wraps
+from numba import njit
 
+def correlation(array: np.ndarray,
+                resp: np.ndarray) -> np.ndarray:
+    # nomalized correlation for find signal position
+    corr = np.correlate(array, resp, mode='same')
+    norm = np.correlate(array, np.ones_like(resp), mode='same')
+    return corr/norm
 
-
-
-def correlation(array: np.ndarray, resp: np.ndarray) -> np.ndarray:
-	
-	corr = np.correlate(array, resp, mode='same')
-	norm = np.correlate(array, np.ones_like(resp), mode='same')
-	return corr/norm
-
-
+@njit(parallel=True, cache=True)
 def vector_shift(vector: np.ndarray, step: int) -> np.ndarray:
     """shift vector values to right by step"""
     new_vector = np.empty_like(vector)
@@ -27,17 +24,17 @@ def vector_shift(vector: np.ndarray, step: int) -> np.ndarray:
     new_vector[:step] = vector[-step:]
     return new_vector
 
-
-
-def bohr_spread(X: float, z1: float, z2: float) -> float:
-
+@njit(fastmath=True)
+def bohr_spread(X: float,
+                z1: float,
+                z2: float) -> float:
     """Bohr`s straggling theory\nclear gaussian\nsigma^2 ~ z1^2*z2*X"""
     return 0.26 * z1 ** 2 * z2 * X * 1e-3
 
-
-
+@njit(parallel=True, cache=True, fastmath=True)
 def get_spread_responce(E: np.ndarray,
                         spreading: np.ndarray,
+                        size: int,
                         k: float) -> np.ndarray:
 
     matrix = np.zeros((E.size, E.size), dtype=np.float32)
@@ -45,14 +42,13 @@ def get_spread_responce(E: np.ndarray,
     spreading += spreading * k * k
     spreading = np.sqrt(spreading)
 
-    for i in numba.prange(1, E.size, 1):
+    for i in range(1, E.size, 1):
         matrix[i, :] = gauss(E, 1, E[i], spreading[i], 0)
         matrix[i, :] /= np.sum(matrix[i, :])
 
     return matrix
 
-
-
+@njit(parallel=True, cache=True, fastmath=True)
 def get_responce(size: int, resolution: float, linear: float) -> np.ndarray:
     """Get responce matrix for SSD detector"""
     matrix = np.empty((size, size))
@@ -69,8 +65,7 @@ def get_responce(size: int, resolution: float, linear: float) -> np.ndarray:
     matrix[0: 20, size - 10: size] = 0
     return matrix
 
-
-
+@njit(parallel=True, cache=True, fastmath=True)
 def gauss(x: np.ndarray(None, np.float32),
           a: np.float32,
           b: np.float32,
@@ -80,13 +75,11 @@ def gauss(x: np.ndarray(None, np.float32),
     return a * np.exp(-0.5 * (x - b) * (x - b) / c / c) + d
 
 
-
 def smooth(array, window=5):
     filt = np.ones(window) / window
     return np.convolve(array, filt, mode='same')
 
-
-
+@njit(parallel=True, cache=True, fastmath=True)
 def kinFactor(m: float, M: float, theta: float) -> float:
     """
     m - mass of projectile in aem
@@ -95,7 +88,6 @@ def kinFactor(m: float, M: float, theta: float) -> float:
     """
     return 1/(1+M/m)**2*(np.cos(np.deg2rad(theta)) +
                          np.sqrt((M/m)**2 - np.sin(np.deg2rad(theta))**2))**2
-
 
 
 def root(func, a, b, eps=2e-2) -> float:
@@ -117,12 +109,10 @@ def root(func, a, b, eps=2e-2) -> float:
         return -1
 
 
-
 def find_extream(array: np.ndarray, mode: str) -> float:
 
     modes = {'min': np.argmin, 'max': np.argmax}
 
-    # array = savgol_filter(array, 17, 1)
     mask = np.where(array > 500)[0][10:-10]
     point = modes[mode](array[mask]) + mask[0]
 
@@ -134,21 +124,23 @@ def find_extream(array: np.ndarray, mode: str) -> float:
     return roots[np.argmin(np.abs(roots-point))]
 
 
-def find_right_edge(spectrum: np.ndarray, width: int = 30) -> float:
+def find_right_edge(spectrum: np.ndarray,
+                    width: int = 30,
+                    thres: float = 200.) -> float:
     """returns position in channel"""
 
     diff_spectrum = np.diff(savgol_filter(spectrum, 7, 2), append=0)
-    edge0 = np.where(spectrum > 200)[0][-1]
+    edge0 = np.where(spectrum > thres)[0][-1]
     window = (edge0 - width, edge0 + width)
 
     p, _ = curve_fit(gauss, 
                      np.arange(*window), 
                      diff_spectrum[np.arange(*window)], 
                      p0=np.array((-40, edge0, 10, 0)))
-    
+
     return p[1]
 
-
+@njit(parallel=True, cache=True, fastmath=True)
 def Rutherford(E: np.ndarray,
                z1: int,
                z2: int,
@@ -165,16 +157,6 @@ def Rutherford(E: np.ndarray,
         A = (m2 ** 2 - m1 ** 2 * sint ** 2) ** 0.5 + m2 * cost
         B = m2 * sint ** 4 * (m2 ** 2 - m1 ** 2 * sint ** 2) ** 0.5
         return c * D * A ** 2 / B
-
-
-
-def calc_chi2(arr1: np.ndarray, arr2: np.ndarray) -> float:
-
-    nonZeroInd = np.where(arr1 != 0)
-    tmp = (arr1[nonZeroInd] - arr2[nonZeroInd])**2/arr1[nonZeroInd]/len(arr1[nonZeroInd])
-
-    return np.sum(tmp)
-
 
 
 def applyEnergyCalibration(E0: float,
@@ -194,11 +176,8 @@ def minimize_(func, x0, step, niter, args):
     bestx = x
 
     cs = bestx
-    dt = np.array((0, 0, 0))
-    k = 0
     for i in range(niter):
 
-        t = time.time()
         eps = np.random.uniform(1 - step, 1 + step, size=len(x))
         cs = bestx * eps
         value = func(cs, *args)
@@ -208,10 +187,6 @@ def minimize_(func, x0, step, niter, args):
             bestfun = value
             bestx = cs
 
-        dt[k] = time.time() - t
-        if k == 2:
-            k = 0
-        else:
-            k += 1
-        print(f'iter {i} of {niter}, func={bestfun: .4f}, EOT={np.average(dt) * (niter - i): .2f}', end='\r', flush=True)
+        if i % 20 == 0:
+            print(f'iter {i} of {niter}, func={bestfun: .4f}', end='\r', flush=True)
     return {'x': bestx, 'fun': bestfun}

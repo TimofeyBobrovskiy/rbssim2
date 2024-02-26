@@ -7,8 +7,8 @@ class Geometry:
     def __init__(self):
 
         self._theta: Union[float, int] = 170
-        self._alpha: Union[float, int] = 10
-        self._beta: Union[float, int] = 0
+        self._alpha: Union[float, int] = 0
+        self._beta: Union[float, int] = 10
         self.target: List[Layer] = []
         self.foils: List[Layer] = []
         self.windows: List[Layer] = []

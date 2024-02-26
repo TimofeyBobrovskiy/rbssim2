@@ -37,7 +37,7 @@ class CrossSection:
                  beamIn,
                  beamOut,
                  theta: float) -> None:
-        
+
         from .Element import Beam, VIsotope
         self.r33: R33 = None
         self.theta: float = theta
@@ -107,14 +107,15 @@ class CrossSection:
 
             self.__function = lambda E: np.float32(
                 np.interp(E, self.r33.data[:, 0],
-                            self.r33.data[:, 1] * Rutherford(
+                             self.r33.data[:, 1] * Rutherford(
                                                     self.r33.data[:, 0],
                                                     self.beamIn.Z,
                                                     self.motherAtom.Z,
                                                     self.beamIn.A,
                                                     self.motherAtom.A,
                                                     self.theta) * 1e-27,
-                                                    left=0, right=0)
+                                                    left=1,
+                                                    right=1)
                         )
 
     def selectRutherford(self) -> None:
