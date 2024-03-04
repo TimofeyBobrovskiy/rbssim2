@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "rbssim2"
-version = "0.1.3"
+version = "0.1.3.0"
 description = "Backscattering simulation"
 authors = ["Timofey Bobrovskiy <timofeybobrovskiy@gmail.com>"]
 readme = "README.md"
