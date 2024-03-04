@@ -2,6 +2,12 @@ import numpy as np
 from scipy.optimize import curve_fit
 from scipy.signal import savgol_filter
 from numba import njit
+try:
+    from .fortran import utilsrbs
+    is_fortran = True
+except ImportError:
+    is_fortran = False
+
 
 def correlation(array: np.ndarray,
                 resp: np.ndarray) -> np.ndarray:
@@ -66,11 +72,11 @@ def get_responce(size: int, resolution: float, linear: float) -> np.ndarray:
     return matrix
 
 @njit(parallel=True, cache=True, fastmath=True)
-def gauss(x: np.ndarray(None, np.float32),
+def gauss(x: np.ndarray,
           a: np.float32,
           b: np.float32,
           c: np.float32,
-          d: np.float32) -> np.ndarray(None, np.float32):
+          d: np.float32) -> np.ndarray:
     """"y(x) = a*e^(-(x-b)^2/2c^2) + d"""
     return a * np.exp(-0.5 * (x - b) * (x - b) / c / c) + d
 
@@ -140,7 +146,7 @@ def find_right_edge(spectrum: np.ndarray,
 
     return p[1]
 
-@njit(parallel=True, cache=True, fastmath=True)
+
 def Rutherford(E: np.ndarray,
                z1: int,
                z2: int,
@@ -150,6 +156,9 @@ def Rutherford(E: np.ndarray,
         """
         E: keV return cross-section in mb/sr
         """
+        if is_fortran:
+            return utilsrbs.rutherford(E, E.size, z1, z2, m1, m2, theta)
+
         cost = np.cos(np.deg2rad(theta))
         sint = np.sin(np.deg2rad(theta))
         c = 5.1837436e6

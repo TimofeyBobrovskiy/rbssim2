@@ -4,7 +4,7 @@ from numba import njit
 np.seterr(all='ignore')
 
 
-@njit(parallel=True, cache=True, fastmath=True)
+@njit(cache=True, fastmath=True)
 def inverse(E: np.ndarray, lenE: int, params: np.ndarray, lenparams:int) -> np.ndarray:
     lnE = np.log(E)
     lnE2 = lnE * lnE
@@ -17,7 +17,7 @@ def inverse(E: np.ndarray, lenE: int, params: np.ndarray, lenparams:int) -> np.n
             params[4] * lnE4)
 
 
-@njit(parallel=True, cache=True, fastmath=True)
+@njit(cache=True, fastmath=True)
 def equation(E: np.ndarray, lenE: int, params: np.ndarray, lenparams:int) -> np.ndarray:
     lnE = np.log(E)
     lnE2 = lnE * lnE
@@ -31,7 +31,7 @@ def equation(E: np.ndarray, lenE: int, params: np.ndarray, lenparams:int) -> np.
 
 
 
-@njit(parallel=True, cache=True, fastmath=True)
+@njit(cache=True, fastmath=True)
 def inverseintegral(E: np.ndarray, lenE: int, params: np.ndarray, lenparams:int) -> np.ndarray:
 
     lnE = np.log(E)

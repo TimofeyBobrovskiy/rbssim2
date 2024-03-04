@@ -26,3 +26,13 @@ def test_get_spread_responce():
         utilsRBS.get_spread_responce(E, spread, E.size, k),
         futilsRBS.get_spread_responce(E, spread, E.size, k), atol=1e-2
     )
+
+def test_rutherford():
+
+    E = np.arange(1000)
+    
+
+    np.testing.assert_allclose(
+        utilsRBS.Rutherford(E, 2, 6, 4, 12, 150 ),
+        futilsRBS.rutherford(E, E.size, 2, 6, 4, 12, 150 ), atol=1e-2
+    )

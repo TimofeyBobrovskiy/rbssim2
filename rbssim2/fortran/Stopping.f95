@@ -140,7 +140,7 @@ subroutine energyafterstopping(E0, X, lenE, params, lenParams, threshold, result
 !f2py   depend(lenParams) params
 !f2py   depend(lenE) result
     energyend(1) = 0
-    isend = 0
+    isend = .false.
 
     call inverseIntegral(E0, lenE, params, lenParams, int_from)
 
@@ -152,7 +152,7 @@ subroutine energyafterstopping(E0, X, lenE, params, lenParams, threshold, result
         do j = 1, 100
             if (energyend(1) .le. threshold) then
                 result(i) = 0
-                isend = 1
+                isend = .true.
                 exit
             endif
 

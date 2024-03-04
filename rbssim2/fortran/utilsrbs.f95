@@ -38,3 +38,26 @@ subroutine get_spread_responce(energies, spreads, size, kinfactor, matrix)
         enddo
 
 end subroutine get_spread_responce
+
+
+subroutine rutherford(energies, lene, z1, z2, m1, m2, theta, result)
+        
+        real(8), parameter :: pi = 3.1415926, c = 5.1837436e6
+        integer, intent(in) :: lene
+        real(8), intent(in) :: energies(lene)
+        real(8), intent(in) :: z1, z2, m1, m2, theta
+        real(8), intent(out) :: result(lene)
+!f2py   intent(in) energies, lene, z1, z2, m1, m2, theta
+!f2py   intent(out) matrix
+!f2py  depend(lene) energies, result
+        
+        real(8) :: cost, sint
+        real(8), dimension(:) :: a(lene), b(lene), d(lene)
+        cost = cos(theta / 180. * pi)
+        sint = sin(theta / 180. * pi)
+
+        d = (z1 * z2 / energies) * (z1 * z2 / energies)
+        A = sqrt(m2 * m2 - m1 * m1 * sint * sint) + m2 * cost
+        B = m2 * sint * sint * sint * sint * sqrt(m2 * m2 - m1 * m1 * sint * sint)
+        result = c * D * A * A / B
+end subroutine rutherford
