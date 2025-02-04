@@ -1,11 +1,14 @@
 import numpy as np
+from Globals import STOPPING_FOLDER
+
 try:
     from .fortran import Stopping
 except ImportError:
     from . import _Stopping as Stopping
 
+
 def inverse(E: np.ndarray, params: np.ndarray) -> np.ndarray:
-    
+
     return Stopping.inverse(E, E.size, params, params.size)
 
 
@@ -39,4 +42,17 @@ def EnergyAfterStopping(E0: np.ndarray,
                         E_THRESHOLD: float) -> np.ndarray:
     assert (E0.size == X.size)
 
-    return Stopping.energyafterstopping(E0, X, E0.size, params, params.size, E_THRESHOLD)
+    return Stopping.energyafterstopping(E0, X, E0.size, params,
+                                        params.size, E_THRESHOLD)
+
+
+def getStoppingParams(projectile_z: int,
+                      projectile_m: int,
+                      target_z: int) -> np.ndarray:
+
+    params = np.ones(5)
+    try:
+        params = np.loadtxt(f"{STOPPING_FOLDER}{projectile_z}_{projectile_m}_{target_z}.dat")
+    except FileNotFoundError:
+        pass
+    return params
