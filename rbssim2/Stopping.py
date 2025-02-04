@@ -1,5 +1,5 @@
 import numpy as np
-from Globals import STOPPING_FOLDER
+from .Globals import STOPPING_FOLDER
 
 try:
     from .fortran import Stopping
